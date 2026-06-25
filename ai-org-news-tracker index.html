@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI对组织影响外部动态跟踪</title>
+<style>
+  :root {
+    --bg-cream: #F8FCFB;
+    --bg-card: #FFFFFF;
+    --text-primary: #1A3431;
+    --text-secondary: #265F57;
+    --text-muted: #53AE9F;
+    --accent-primary: #265F57;
+    --accent-light: #399385;
+    --accent-lighter: #53AE9F;
+    --accent-pale: #7ECABA;
+    --accent-wash: #AEE1D5;
+    --accent-bg: #D7F0EA;
+    --accent-surface: #F3FAF8;
+    --accent-dark: #224D48;
+    --accent-darkest: #1A3431;
+    --border-light: #AEE1D5;
+    --border-medium: #7ECABA;
+    --tag-org: #1A3431;
+    --tag-efficiency: #265F57;
+    --tag-policy: #2C756C;
+    --tag-talent: #399385;
+    --tag-other: #53AE9F;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "PingFang SC", "Noto Sans CJK SC", sans-serif;
+    background: var(--bg-cream);
+    color: var(--text-primary);
+    line-height: 1.6;
+  }
+
+  /* Header */
+  .header {
+    background: var(--accent-darkest);
+    border-bottom: none;
+    padding: 20px 40px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(26, 52, 49, 0.15);
+  }
+  .header-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #FFFFFF;
+    letter-spacing: -0.5px;
+  }
+  .header-meta {
+    font-size: 13px;
+    color: var(--accent-pale);
+  }
+
+  /* Description Bar */
+  .description-bar {
+    max-width: 1400px;
+    margin: 24px auto 0;
+    padding: 0 40px;
+  }
+  .description-bar p {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text-secondary);
+  }
+
+  /* Main Content */
+  .main {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px 40px;
+  }
+
+  /* Filters */
+  .filters {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .filter-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .filter-row-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    min-width: 60px;
+    flex-shrink: 0;
+  }
+  .filter-pills {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .filter-pill {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    border: 1px solid var(--border-light);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .filter-pill:hover {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+  }
+  .filter-pill.active {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    color: #FFFFFF;
+  }
+  .filter-row-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .filter-row-controls select {
+    padding: 6px 12px;
+    border: 1px solid var(--border-light);
+    border-radius: 20px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    background: transparent;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .filter-row-controls select:focus {
+    border-color: var(--accent-primary);
+  }
+  .filter-keyword {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .filter-keyword input {
+    padding: 6px 14px;
+    border: 1px solid var(--border-light);
+    border-radius: 20px;
+    font-size: 13px;
+    color: var(--text-primary);
+    background: transparent;
+    min-width: 200px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .filter-keyword input:focus {
+    border-color: var(--accent-primary);
+  }
+  .filter-reset {
+    padding: 6px 14px;
+    background: transparent;
+    border: 1px solid var(--border-light);
+    border-radius: 20px;
+    color: var(--accent-lighter);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .filter-reset:hover {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+  }
+
+  /* Date Filter */
+  .date-filter-container {
+    position: relative;
+  }
+  .date-trigger {
+    padding: 6px 14px;
+    border: 1px solid var(--border-light);
+    border-radius: 20px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: border-color 0.2s;
+  }
+  .date-trigger:hover, .date-trigger.active {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+  }
+  .date-panel {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(26, 52, 49, 0.12);
+    z-index: 200;
+    overflow: hidden;
+    min-width: 520px;
+  }
+  .date-panel.open {
+    display: flex;
+    flex-direction: column;
+  }
+  .date-panel-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .date-tab-btn {
+    flex: 1;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .date-tab-btn.active {
+    color: var(--accent-primary);
+    border-bottom-color: var(--accent-primary);
+  }
+  .date-tab-btn:hover { color: var(--accent-primary); }
+  .date-panel-body { padding: 20px 24px; }
+  .date-presets {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 8px;
+  }
+  .date-preset {
+    padding: 8px 14px;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    font-size: 13px;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .date-preset:hover { border-color: var(--accent-primary); color: var(--accent-primary); }
+  .date-preset.active { background: var(--accent-primary); border-color: var(--accent-primary); color: white; }
+  /* Calendar */
+  .cal-header-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding: 0 4px;
+  }
+  .cal-header-row input[type="date"] {
+    padding: 6px 10px;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-primary);
+    background: transparent;
+    outline: none;
+    flex: 1;
+  }
+  .cal-header-row input[type="date"]:focus { border-color: var(--accent-primary); }
+  .cal-header-row .cal-arrow { color: var(--text-muted); font-size: 14px; }
+  .cal-wrap {
+    display: flex;
+    gap: 24px;
+  }
+  .cal-month {
+    flex: 1;
+  }
+  .cal-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .cal-nav button {
+    background: none; border: none; cursor: pointer; font-size: 16px; color: var(--text-secondary); padding: 2px 6px; border-radius: 4px;
+  }
+  .cal-nav button:hover { background: var(--accent-surface); }
+  .cal-nav span { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    text-align: center;
+    font-size: 13px;
+  }
+  .cal-grid .cal-dow {
+    font-weight: 600;
+    color: var(--text-muted);
+    padding: 4px 0;
+  }
+  .cal-grid .cal-day {
+    padding: 6px 0;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text-primary);
+    transition: all 0.15s;
+  }
+  .cal-grid .cal-day:hover { background: var(--accent-surface); }
+  .cal-grid .cal-day.other-month { color: var(--accent-lighter); }
+  .cal-grid .cal-day.in-range { background: var(--accent-bg); }
+  .cal-grid .cal-day.range-start,
+  .cal-grid .cal-day.range-end {
+    background: var(--accent-primary);
+    color: white;
+    font-weight: 600;
+  }
+  .cal-grid .cal-day.today { box-shadow: inset 0 0 0 1px var(--accent-primary); }
+  .date-panel-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 20px;
+    border-top: 1px solid var(--border-light);
+  }
+  .date-clear {
+    padding: 6px 14px;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    font-size: 13px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+  .date-clear:hover { border-color: var(--accent-primary); color: var(--accent-primary); }
+  .date-confirm {
+    padding: 6px 14px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    background: var(--accent-primary);
+    color: white;
+    cursor: pointer;
+  }
+  .date-confirm:hover { background: var(--accent-light); }
+
+  /* Results Info */
+  .results-info {
+    font-size: 13px;
+    color: var(--accent-lighter);
+    margin-bottom: 16px;
+    padding-left: 4px;
+  }
+
+  /* News Cards */
+  .news-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .news-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 22px 26px;
+    transition: box-shadow 0.2s, border-color 0.2s;
+  }
+  .news-card:hover {
+    box-shadow: 0 4px 16px rgba(38, 95, 87, 0.08);
+    border-color: var(--accent-pale);
+  }
+  .news-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .news-tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 20px;
+    color: white;
+    white-space: nowrap;
+  }
+  .news-tag.org { background: var(--tag-org); }
+  .news-tag.efficiency { background: var(--tag-efficiency); }
+  .news-tag.policy { background: var(--tag-policy); }
+  .news-tag.talent { background: var(--tag-talent); }
+  .news-tag.other { background: var(--tag-other); }
+
+  .news-company {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+  .news-date {
+    font-size: 12px;
+    color: var(--accent-lighter);
+    margin-left: auto;
+  }
+  .news-summary {
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--text-primary);
+  }
+  .news-sources {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-light);
+  }
+  .news-sources a {
+    font-size: 13px;
+    color: var(--accent-primary);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-right: 16px;
+    margin-bottom: 6px;
+    padding: 3px 0;
+    transition: color 0.2s;
+  }
+  .news-sources a:hover {
+    color: var(--accent-light);
+    text-decoration: underline;
+  }
+  .news-sources a::before {
+    content: "\2197";
+    font-size: 12px;
+    opacity: 0.7;
+  }
+
+  /* Empty State */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--accent-lighter);
+  }
+  .empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+    opacity: 0.6;
+  }
+
+  /* Footer */
+  .footer {
+    max-width: 1400px;
+    margin: 40px auto 0;
+    padding: 20px 40px 40px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--accent-lighter);
+    border-top: 1px solid var(--border-light);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .header { padding: 16px 20px; }
+    .main { padding: 16px 20px; }
+    .description-bar { padding: 0 20px; }
+    .filters { gap: 12px; }
+    .filter-row { gap: 8px; }
+    .filter-pill { padding: 5px 10px; font-size: 12px; }
+    .filter-keyword input { min-width: 150px; }
+    .news-card { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <h1>AI对组织影响外部动态跟踪</h1>
+    <div class="header-meta">数据更新：2026-06-23</div>
+  </div>
+</div>
+
+<div class="description-bar">
+  <p>追踪Meta、Google、腾讯、阿里巴巴、Microsoft等公司在AI对组织影响相关的动态，如人才相关、组织调整、AI提效、HC影响等方面。信息抓取来自Sensight，Claude，ChatGPT，Gemini，和其它渠道看到的资讯，经筛选后录入。</p>
+</div>
+
+<div class="main">
+  <div class="filters">
+    <div class="filter-row">
+      <span class="filter-row-label">分类</span>
+      <div class="filter-pills" id="filter-category-pills">
+        <button class="filter-pill active" data-value="">全部</button>
+        <button class="filter-pill" data-value="org">组织相关</button>
+        <button class="filter-pill" data-value="efficiency">AI提效/人力影响</button>
+        <button class="filter-pill" data-value="policy">AI风险与政策</button>
+        <button class="filter-pill" data-value="talent">AI人才</button>
+        <button class="filter-pill" data-value="other">其它AI相关</button>
+      </div>
+    </div>
+    <div class="filter-row">
+      <span class="filter-row-label">公司</span>
+      <div class="filter-pills" id="filter-company-pills">
+        <button class="filter-pill active" data-value="">全部</button>
+        <button class="filter-pill" data-value="Meta">Meta</button>
+        <button class="filter-pill" data-value="Google">Google</button>
+        <button class="filter-pill" data-value="腾讯">腾讯</button>
+        <button class="filter-pill" data-value="阿里巴巴">阿里巴巴</button>
+        <button class="filter-pill" data-value="Amazon">Amazon</button>
+        <button class="filter-pill" data-value="Microsoft">Microsoft</button>
+        <button class="filter-pill" data-value="其它">其它</button>
+      </div>
+    </div>
+    <div class="filter-row">
+      <span class="filter-row-label">时间</span>
+      <div class="date-filter-container">
+        <button class="date-trigger" id="date-trigger" onclick="toggleDatePanel()">
+          <span id="date-display">全部时间</span>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 5l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+        <div class="date-panel" id="date-panel">
+          <div class="date-panel-tabs">
+            <button class="date-tab-btn active" data-tab="dynamic" onclick="switchDateTab('dynamic')">动态日期</button>
+            <button class="date-tab-btn" data-tab="fixed" onclick="switchDateTab('fixed')">固定日期</button>
+          </div>
+          <div class="date-panel-body">
+            <!-- Dynamic presets -->
+            <div id="date-tab-dynamic">
+              <div class="date-presets">
+                <button class="date-preset" onclick="setDynamicRange(1)">最近 1 天</button>
+                <button class="date-preset" onclick="setDynamicRange(7)">最近 7 天</button>
+                <button class="date-preset" onclick="setDynamicRange(14)">最近 14 天</button>
+                <button class="date-preset" onclick="setDynamicRange(30)">最近 30 天</button>
+                <button class="date-preset" onclick="setDynamicRange('thisWeek')">本周</button>
+                <button class="date-preset" onclick="setDynamicRange('lastWeek')">上周</button>
+                <button class="date-preset" onclick="setDynamicRange('thisMonth')">本月</button>
+                <button class="date-preset" onclick="setDynamicRange('lastMonth')">上月</button>
+              </div>
+            </div>
+            <!-- Fixed calendar -->
+            <div id="date-tab-fixed" style="display:none;">
+              <div class="cal-header-row">
+                <input type="date" id="date-start" onchange="onDateInputChange()">
+                <span class="cal-arrow">&rarr;</span>
+                <input type="date" id="date-end" onchange="onDateInputChange()">
+              </div>
+              <div class="cal-wrap">
+                <div class="cal-month" id="cal-left"></div>
+                <div class="cal-month" id="cal-right"></div>
+              </div>
+            </div>
+          </div>
+          <div class="date-panel-footer">
+            <button class="date-clear" onclick="clearDateFilter()">清除</button>
+            <button class="date-confirm" onclick="toggleDatePanel()">确定</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="filter-row">
+      <span class="filter-row-label">搜索</span>
+      <div class="filter-keyword">
+        <input type="text" id="filter-keyword" placeholder="输入关键词搜索新闻内容...">
+        <button class="filter-reset" onclick="resetFilters()">重置全部</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="results-info" id="results-info"></div>
+
+  <div class="news-list" id="news-list"></div>
+</div>
+
+<div class="footer">
+  数据来源：飞书文档「[每日更新]AI对组织影响外部动态跟踪」 · 每日 23:59 自动同步
+</div>
+
+<script>
+// Mock data based on the actual document structure
+const newsData = [
+  {
+    category: "efficiency",
+    company: "Oracle",
+    date: "2026-06-23",
+    week: "6.22-6.28",
+    summary: "Oracle在6月22日提交的年度报告中披露，过去12个月裁员约21,000人，全球员工总数从162,000降至141,000，降幅达13%。公司在年度监管申报文件中明确将裁员与AI挂钩，表示\"AI的应用已导致且可能继续导致员工减少\"。Oracle因裁员支付了18.4亿美元遣散费，远超上一财年的3.74亿。此轮裁员与公司激进AI战略带来的现金压力密切相关：本财年净资本支出预计将达到~700亿美元。",
+    sources: [
+      { title: "Oracle Cut 21,000 Jobs in 12 Months, Says AI Replaced Some Roles", url: "https://www.bloomberg.com/news/articles/2026-06-22/oracle-layoffs-fueled-by-ai-reduces-workforce-by-21-000" },
+      { title: "Oracle workforce shrinks by about 13%", url: "https://www.reuters.com/business/world-at-work/oracle-workforce-shrinks-by-about-13-2026-06-22/" }
+    ]
+  },
+  {
+    category: "talent",
+    company: "General",
+    date: "2026-06-15",
+    week: "6.15-6.21",
+    summary: "从悉尼到伦敦，全球各大银行正争相设立\"首席AI官\"(CAIO)这一在一年前几乎不存在的高管职位。据IBM调查，设有CAIO的企业比例已从2025年的26%飙升至今年的76%。汇丰、澳大利亚联邦银行、劳埃德银行均在过去三个月完成了相关任命，这类岗位年薪中位数约160万美元，顶端可达350万美元。然而，现任CAIO们自己认为这个角色可能是\"过渡性\"的。",
+    sources: [
+      { title: "Top Banks Rush to Fill Chief AI Roles as Talent Jumps to Rivals", url: "https://www.bloomberg.com/news/articles/2026-06-15/top-banks-rush-to-fill-chief-ai-roles-as-talent-jumps-to-rivals" }
+    ]
+  },
+  {
+    category: "org",
+    company: "美团",
+    date: "2026-06-15",
+    week: "6.15-6.21",
+    summary: "美团核心本地商业进行重大组织调整：成立与外卖、闪购平级的AI Transformation部门，由前大众点评总经理负责，向CEO汇报；无人车业务负责人从技术背景换为运营背景，推动商业化变现。王莆中在Q1财报电话会上提出\"To A\"新概念 (服务 AI Agent)，宣布AI助手\"小美\"将与腾讯元宝深度合作。",
+    sources: [
+      { title: "美团高层大调整，紧急成立新部门", url: "https://www.pai.com.cn/p/01ktqj48d1k0wdyyk4ad43qpfm" }
+    ]
+  },
+  {
+    category: "org",
+    company: "阿里巴巴",
+    date: "2026-06-15",
+    week: "6.15-6.21",
+    summary: "钉钉前产品经理\"幽素\"发布7.5万字离职长文《置身钉内》，复盘了钉钉\"ONE\"这款AI产品从立项、冲高至300万DAU，再到最终收缩、拆分的全过程，揭示了战略反复、产品决策过度依赖CEO个人偏好、高压迭代导致团队内耗等问题。阿里合伙人委员会在内网发文批评钉钉管理方式\"不是阿里文化该有的样子\"。次日无招卸任，钉钉换帅。",
+    sources: [
+      { title: "7.5万字长文《置身钉内》引全网围观", url: "https://mp.weixin.qq.com/s?__biz=MzA4NTE1NzAwMw==&mid=2649843132&idx=1&sn=8e89c0235f59645973c7b7ba47a78ec8" }
+    ]
+  },
+  {
+    category: "org",
+    company: "阿里巴巴",
+    date: "2026-06-18",
+    week: "6.15-6.21",
+    summary: "钉钉新任CEO上任一周后发布首封全员信，宣布多项组织调整：成立核心平台业务部；将悟空与MuleRun团队整合为新悟空团队；整合直销、电销、服务商成立客户发展部；新设市场部和信息技术部。将钉钉和悟空定位为\"双引擎\"，强调对已有业务全面AI化改造，使其成为Agent友好的基础设施。",
+    sources: [
+      { title: "钉钉新CEO发首封全员信：成立核心平台业务部", url: "https://tech.ifeng.com/c/8u3jKw4P3aG" }
+    ]
+  },
+  {
+    category: "org",
+    company: "General",
+    date: "2026-06-17",
+    week: "6.15-6.21",
+    summary: "文章指出当模型能力趋同后，真正拉开差距的是组织能否持续产生新想法。从全球大厂实践中提炼三条原则：1）尊重个体观点，给足上下沟通表达的空间；2）围绕任务组建混编小队而非一味扁平化；3）铲除山头文化，内部利益团体的博弈会迟滞创新并消耗核心人才的认同感。",
+    sources: [
+      { title: "「组织更新」正在成为大厂AI业务的核心挑战", url: "https://www.tmtpost.com/8031830.html" }
+    ]
+  },
+  {
+    category: "efficiency",
+    company: "IgniteTech",
+    date: "2026-06-15",
+    week: "6.15-6.21",
+    summary: "企业软件公司IgniteTech的CEO在Fortune Brainstorm Tech大会上透露，他因员工拒绝使用AI而裁掉了约80%的员工。公司曾投入全年薪资总额的20%、每周拿出一天、持续一整个季度来培训员工学习AI，但仍有大量人表态拒绝。德勤副主席指出企业93%的AI预算花在技术上，仅7%用于帮助员工适应转型，核心障碍是\"忘旧\"(unlearning)。",
+    sources: [
+      { title: "This tech CEO fired 80% of his workforce over AI resistance", url: "https://dc.fortune.com/2026/06/15/this-tech-ceo-fired-80-of-his-workforce-over-ai-resistance-heres-what-hes-learned-since-then/" }
+    ]
+  },
+  {
+    category: "efficiency",
+    company: "腾讯",
+    date: "2026-06-15",
+    week: "6.15-6.21",
+    summary: "腾讯6月起收紧员工Token额度，此前每人年均约22万元，调整后月额度降至1000-7000元人民币不等。新规则：额度分配到组，由组长动态调配；内部明确反对以Token消耗量排名衡量员工产出；腾讯自研混元模型不限量使用，限额主要针对外部模型。部分员工选择自费订阅200美元/月的Codex Pro补充算力。",
+    sources: [
+      { title: "大厂Token不再\"管够\"，腾讯开始限额", url: "https://36kr.com/p/3854191285507336" }
+    ]
+  },
+  {
+    category: "efficiency",
+    company: "General",
+    date: "2026-06-16",
+    week: "6.15-6.21",
+    summary: "今年618大促，AI几乎渗透到了电商全链条：阿里把千问与淘宝打通、字节把豆包与抖音商城打通，购物入口从\"搜索\"转向\"对话\"；京东AI数字人主播开播量同比增长6倍、超7万商家使用，时薪低至12元实现24小时不间断带货；AI客服方面，淘宝\"店小蜜\"升级为导购型，抖音飞鸽智能客服可节省约70%人力。",
+    sources: [
+      { title: "大厂AI，大战618", url: "https://36kr.com/p/3855127877080322" }
+    ]
+  },
+  {
+    category: "efficiency",
+    company: "Anthropic",
+    date: "2026-06-16",
+    week: "6.15-6.21",
+    summary: "Anthropic对40万次Claude Code会话分析发现：用户做出约70%的规划决策，Claude做出约80%的执行决策；专家会话的验证成功率(28-33%)是新手(15%)的两倍以上；管理者的验证成功率在所有十大职业群体中排名最高；专家每条指令触发12个动作，新手仅5个；在产出代码的会话中，所有十大职业群体的成功率都在软件工程师的7个百分点以内。",
+    sources: [
+      { title: "Agentic coding and persistent returns to expertise", url: "https://www.anthropic.com/research/claude-code-expertise" }
+    ]
+  },
+  {
+    category: "policy",
+    company: "Meta",
+    date: "2026-06-15",
+    week: "6.15-6.21",
+    summary: "Meta CTO在一份内部备忘录中承认，公司今年3月组建6500人Applied AI部门的方式\"极其糟糕\"——未能向员工解释清楚愿景、职业发展路径和支持措施。宣布补救措施：将每位经理的管理宽幅上限设为20人、减少因重组导致的频繁换领导情况，并增加社交活动预算以重振士气。被强制调入该部门的员工后续可自由申请内部其他职位。",
+    sources: [
+      { title: "Meta CTO Admits the Company's AI Reorg Was 'Atrocious'", url: "https://www.wired.com/story/andrew-bosworth-meta-employees-unrest/" }
+    ]
+  },
+  {
+    category: "policy",
+    company: "General",
+    date: "2026-06-15",
+    week: "6.15-6.21",
+    summary: "尽管特朗普要求联邦政府主导AI监管，美国各州仍在加速推进AI立法。伊利诺伊州要求大型AI模型开发者接受独立审计；科罗拉多州要求在就业、教育等关键领域使用AI做决策时必须告知当事人；加州正推进\"禁止机器人老板法案\"，禁止雇主完全依赖AI解雇或处分员工。",
+    sources: [
+      { title: "Trump tried to block state AI regulations, but some states are forging ahead", url: "https://apnews.com/article/trump-artificial-intelligence-chatbots-ai-23a0e44ab05402ddfe9cdfd0bffa0ade" }
+    ]
+  },
+  {
+    category: "policy",
+    company: "Anthropic",
+    date: "2026-06-15",
+    week: "6.15-6.21",
+    summary: "特朗普政府对Anthropic最新模型Fable 5实施出口管制，仅给了90分钟下架时间。多位网络安全专家联名指出，该\"越狱\"只是模型正常的代码修复功能，OpenAI的GPT-5.5具有相同能力却未受限制。由于出口管制无法区分美国公民和持签证的外国员工，Anthropic被迫对所有用户关闭相关模型。",
+    sources: [
+      { title: "The White House Is Ratcheting Up Its War Against Anthropic", url: "https://www.theatlantic.com/technology/2026/06/trump-anthropic-export-control-ai-race/687555/" }
+    ]
+  },
+  {
+    category: "policy",
+    company: "General",
+    date: "2026-06-16",
+    week: "6.15-6.21",
+    summary: "美国五角大楼与头部AI实验室的合作正引发广泛担忧：专门为政府定制、削弱安全约束的模型版本可能将分散的数据整合为覆盖全民的监控基础设施。多模态AI的进步使图像、语音、位置等碎片化信息能被自动关联分析，从根本上改变政府监控的规模和深度。",
+    sources: [
+      { title: "Could AI Supercharge the Government Surveillance Stack?", url: "https://cacm.acm.org/news/could-ai-supercharge-the-government-surveillance-stack/" }
+    ]
+  },
+  {
+    category: "other",
+    company: "General",
+    date: "2026-06-18",
+    week: "6.15-6.21",
+    summary: "PwC对超过10亿条招聘启事的分析，发现了\"seniorization\"的招聘趋势：AI并未消灭初级岗位，但正在重新定义「初级」的含义——入门要求提升，企业更倾向招聘有经验、能立即指挥AI工具产出的人。这意味着传统的「从初级做起逐步成长」路径正在被压缩。",
+    sources: [
+      { title: "PwC: AI is reshaping what 'entry-level' means", url: "https://www.pwc.com/gx/en/issues/artificial-intelligence.html" }
+    ]
+  }
+];
+
+const categoryMap = {
+  'org': '组织相关',
+  'efficiency': 'AI提效/人力影响',
+  'policy': 'AI风险与政策',
+  'talent': 'AI人才',
+  'other': '其它AI相关'
+};
+
+// State
+let activeCategory = '';
+let activeCompany = '';
+let dateStart = null;
+let dateEnd = null;
+
+// Populate company pills — no longer needed, hardcoded in HTML
+
+// Date filter logic
+let calLeftMonth = new Date(2026, 5, 1); // June 2026
+let calRightMonth = new Date(2026, 6, 1); // July 2026
+let rangeSelecting = null; // null | 'start' | 'end'
+
+function toggleDatePanel() {
+  const panel = document.getElementById('date-panel');
+  const trigger = document.getElementById('date-trigger');
+  panel.classList.toggle('open');
+  trigger.classList.toggle('active');
+  if (panel.classList.contains('open')) renderCalendars();
+}
+
+function switchDateTab(tab) {
+  document.querySelectorAll('.date-tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.date-tab-btn[data-tab="${tab}"]`).classList.add('active');
+  document.getElementById('date-tab-dynamic').style.display = tab === 'dynamic' ? 'block' : 'none';
+  document.getElementById('date-tab-fixed').style.display = tab === 'fixed' ? 'block' : 'none';
+  if (tab === 'fixed') renderCalendars();
+}
+
+function setDynamicRange(range) {
+  const today = new Date(2026, 5, 23);
+  let start, end = new Date(today);
+  document.querySelectorAll('.date-preset').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  if (typeof range === 'number') {
+    start = new Date(today); start.setDate(today.getDate() - range + 1);
+  } else if (range === 'thisWeek') {
+    start = new Date(today); const day = start.getDay() || 7; start.setDate(start.getDate() - day + 1);
+  } else if (range === 'lastWeek') {
+    end = new Date(today); const day = end.getDay() || 7; end.setDate(end.getDate() - day);
+    start = new Date(end); start.setDate(end.getDate() - 6);
+  } else if (range === 'thisMonth') {
+    start = new Date(today.getFullYear(), today.getMonth(), 1);
+  } else if (range === 'lastMonth') {
+    start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    end = new Date(today.getFullYear(), today.getMonth(), 0);
+  }
+  dateStart = start; dateEnd = end;
+  syncDateInputs(); updateDateDisplay(); renderNews();
+}
+
+function onDateInputChange() {
+  const s = document.getElementById('date-start').value;
+  const e = document.getElementById('date-end').value;
+  if (s) dateStart = new Date(s);
+  if (e) dateEnd = new Date(e);
+  if (dateStart && dateEnd && dateEnd < dateStart) {
+    const tmp = dateStart; dateStart = dateEnd; dateEnd = tmp; syncDateInputs();
+  }
+  updateDateDisplay(); renderCalendars(); renderNews();
+}
+
+function onCalDayClick(year, month, day) {
+  const clicked = new Date(year, month, day);
+  if (!dateStart || (dateStart && dateEnd)) {
+    dateStart = clicked; dateEnd = null;
+  } else {
+    if (clicked < dateStart) { dateEnd = dateStart; dateStart = clicked; }
+    else { dateEnd = clicked; }
+  }
+  syncDateInputs(); updateDateDisplay(); renderCalendars(); renderNews();
+}
+
+function syncDateInputs() {
+  const fmt = d => d ? d.toISOString().slice(0, 10) : '';
+  document.getElementById('date-start').value = fmt(dateStart);
+  document.getElementById('date-end').value = fmt(dateEnd);
+}
+
+function clearDateFilter() {
+  dateStart = null; dateEnd = null;
+  document.getElementById('date-start').value = '';
+  document.getElementById('date-end').value = '';
+  document.querySelectorAll('.date-preset').forEach(b => b.classList.remove('active'));
+  updateDateDisplay(); renderCalendars(); renderNews();
+}
+
+function updateDateDisplay() {
+  const display = document.getElementById('date-display');
+  if (!dateStart && !dateEnd) { display.textContent = '全部时间'; }
+  else {
+    const fmt = d => d ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` : '...';
+    display.textContent = `${fmt(dateStart)} ~ ${fmt(dateEnd)}`;
+  }
+}
+
+function renderCalendars() {
+  renderOneMonth('cal-left', calLeftMonth);
+  renderOneMonth('cal-right', calRightMonth);
+}
+
+function renderOneMonth(containerId, monthDate) {
+  const container = document.getElementById(containerId);
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const today = new Date(2026, 5, 23);
+  const firstDay = new Date(year, month, 1).getDay() || 7; // Mon=1
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const daysInPrev = new Date(year, month, 0).getDate();
+  const isLeft = containerId === 'cal-left';
+
+  let html = `<div class="cal-nav">`;
+  if (isLeft) {
+    html += `<button onclick="navMonth(-1)">&lsaquo;</button>`;
+  } else {
+    html += `<span></span>`;
+  }
+  html += `<span>${year}年${month + 1}月</span>`;
+  if (!isLeft) {
+    html += `<button onclick="navMonth(1)">&rsaquo;</button>`;
+  } else {
+    html += `<span></span>`;
+  }
+  html += `</div><div class="cal-grid">`;
+  const dows = ['一','二','三','四','五','六','日'];
+  dows.forEach(d => { html += `<div class="cal-dow">${d}</div>`; });
+
+  // Previous month fill
+  for (let i = firstDay - 1; i > 0; i--) {
+    const d = daysInPrev - i + 1;
+    const prevMonth = month - 1;
+    const prevYear = prevMonth < 0 ? year - 1 : year;
+    const pm = prevMonth < 0 ? 11 : prevMonth;
+    html += `<div class="cal-day other-month" onclick="onCalDayClick(${prevYear},${pm},${d})">${d}</div>`;
+  }
+  // Current month
+  for (let d = 1; d <= daysInMonth; d++) {
+    const thisDate = new Date(year, month, d);
+    let cls = 'cal-day';
+    if (dateStart && thisDate.getTime() === dateStart.getTime()) cls += ' range-start';
+    else if (dateEnd && thisDate.getTime() === dateEnd.getTime()) cls += ' range-end';
+    else if (dateStart && dateEnd && thisDate > dateStart && thisDate < dateEnd) cls += ' in-range';
+    if (thisDate.getTime() === today.getTime()) cls += ' today';
+    html += `<div class="${cls}" onclick="onCalDayClick(${year},${month},${d})">${d}</div>`;
+  }
+  // Next month fill
+  const totalCells = firstDay - 1 + daysInMonth;
+  const remaining = (7 - totalCells % 7) % 7;
+  for (let d = 1; d <= remaining; d++) {
+    const nextMonth = month + 1;
+    const ny = nextMonth > 11 ? year + 1 : year;
+    const nm = nextMonth > 11 ? 0 : nextMonth;
+    html += `<div class="cal-day other-month" onclick="onCalDayClick(${ny},${nm},${d})">${d}</div>`;
+  }
+  html += `</div>`;
+  container.innerHTML = html;
+}
+
+function navMonth(dir) {
+  calLeftMonth.setMonth(calLeftMonth.getMonth() + dir);
+  calRightMonth = new Date(calLeftMonth);
+  calRightMonth.setMonth(calRightMonth.getMonth() + 1);
+  renderCalendars();
+}
+
+// Close date panel only when clicking outside (not on calendar interaction)
+document.addEventListener('click', e => {
+  const container = document.querySelector('.date-filter-container');
+  if (!container) return;
+  // If the click target was removed from DOM (e.g. calendar re-render), don't close
+  if (!document.contains(e.target)) return;
+  if (!container.contains(e.target)) {
+    document.getElementById('date-panel').classList.remove('open');
+    document.getElementById('date-trigger').classList.remove('active');
+  }
+});
+
+// Pill click handlers
+function setupPills() {
+  document.getElementById('filter-category-pills').addEventListener('click', e => {
+    const pill = e.target.closest('.filter-pill');
+    if (!pill) return;
+    document.querySelectorAll('#filter-category-pills .filter-pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    activeCategory = pill.dataset.value;
+    renderNews();
+  });
+
+  document.getElementById('filter-company-pills').addEventListener('click', e => {
+    const pill = e.target.closest('.filter-pill');
+    if (!pill) return;
+    document.querySelectorAll('#filter-company-pills .filter-pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    activeCompany = pill.dataset.value;
+    renderNews();
+  });
+}
+
+// Render news
+function renderNews() {
+  const keyword = document.getElementById('filter-keyword').value.toLowerCase();
+
+  let filtered = newsData.filter(n => {
+    if (activeCategory && n.category !== activeCategory) return false;
+    if (activeCompany) {
+      const mainCompanies = ['Meta', 'Google', '腾讯', '阿里巴巴', 'Amazon', 'Microsoft'];
+      if (activeCompany === '其它') {
+        if (mainCompanies.includes(n.company)) return false;
+      } else {
+        if (n.company !== activeCompany) return false;
+      }
+    }
+    if (dateStart || dateEnd) {
+      const nd = new Date(n.date);
+      if (dateStart && nd < dateStart) return false;
+      if (dateEnd && nd > dateEnd) return false;
+    }
+    if (keyword && !n.summary.toLowerCase().includes(keyword) && !n.company.toLowerCase().includes(keyword)) return false;
+    return true;
+  });
+
+  const container = document.getElementById('news-list');
+  const info = document.getElementById('results-info');
+  info.textContent = `共 ${filtered.length} 条结果` + (filtered.length !== newsData.length ? `（已筛选，总计 ${newsData.length} 条）` : '');
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">&#128269;</div>
+        <p>没有匹配的新闻条目，请调整筛选条件。</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = filtered.map(news => `
+    <div class="news-card">
+      <div class="news-card-header">
+        <span class="news-tag ${news.category}">${categoryMap[news.category]}</span>
+        <span class="news-company">${news.company}</span>
+        <span class="news-date">${news.date}</span>
+      </div>
+      <div class="news-summary">${news.summary}</div>
+      <div class="news-sources">
+        ${news.sources.map(s => `<a href="${s.url}" target="_blank" rel="noopener">${s.title}</a>`).join('<br>')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function resetFilters() {
+  activeCategory = '';
+  activeCompany = '';
+  document.querySelectorAll('#filter-category-pills .filter-pill').forEach(p => p.classList.remove('active'));
+  document.querySelector('#filter-category-pills .filter-pill[data-value=""]').classList.add('active');
+  document.querySelectorAll('#filter-company-pills .filter-pill').forEach(p => p.classList.remove('active'));
+  document.querySelector('#filter-company-pills .filter-pill[data-value=""]').classList.add('active');
+  clearDateFilter();
+  document.getElementById('filter-keyword').value = '';
+  renderNews();
+}
+
+// Event listeners
+document.getElementById('filter-keyword').addEventListener('input', renderNews);
+
+// Init
+setupPills();
+renderNews();
+</script>
+</body>
+</html>
